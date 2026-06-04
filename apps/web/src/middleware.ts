@@ -16,6 +16,14 @@ function isAdmin(tier: string | undefined, email: string | undefined) {
   return email ? admins.includes(email.toLowerCase()) : false;
 }
 
+function useSecureSessionCookie(req: NextRequest): boolean {
+  return (
+    req.nextUrl.protocol === "https:" ||
+    process.env.VERCEL === "1" ||
+    process.env.NODE_ENV === "production"
+  );
+}
+
 export async function middleware(req: NextRequest) {
   const corsResponse = handleApiCors(req);
   if (corsResponse) return corsResponse;
@@ -23,6 +31,7 @@ export async function middleware(req: NextRequest) {
   const token = await getToken({
     req,
     secret: getAuthSecret(),
+    secureCookie: useSecureSessionCookie(req),
   });
 
   const pathname = req.nextUrl.pathname;
