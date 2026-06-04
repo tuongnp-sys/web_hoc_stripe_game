@@ -1,6 +1,7 @@
 import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getAuthSecret } from "@/lib/auth-url";
 import { handleApiCors } from "@/lib/api-cors";
 
 function canAccessVipLab(tier: string | undefined) {
@@ -21,7 +22,7 @@ export async function middleware(req: NextRequest) {
 
   const token = await getToken({
     req,
-    secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+    secret: getAuthSecret(),
   });
 
   const pathname = req.nextUrl.pathname;

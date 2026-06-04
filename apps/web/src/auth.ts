@@ -4,31 +4,43 @@ import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
 import bcrypt from "bcryptjs";
+import {
+  ensureAuthEnv,
+  getAuthSecret,
+  hasGitHubOAuth,
+  hasGoogleOAuth,
+  hasOAuthProviders,
+} from "@/lib/auth-url";
 import { isAdminEmail } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 
+ensureAuthEnv();
+
+const useDatabaseAdapter = hasOAuthProviders();
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
-  adapter: PrismaAdapter(prisma),
+  secret: getAuthSecret(),
+  ...(useDatabaseAdapter ? { adapter: PrismaAdapter(prisma) } : {}),
   session: { strategy: "jwt" },
   pages: {
     signIn: "/auth/signin",
   },
   providers: [
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+    ...(hasGoogleOAuth()
       ? [
           Google({
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            clientId: process.env.GOOGLE_CLIENT_ID!,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
             allowDangerousEmailAccountLinking: true,
           }),
         ]
       : []),
-    ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+    ...(hasGitHubOAuth()
       ? [
           GitHub({
-            clientId: process.env.GITHUB_CLIENT_ID,
-            clientSecret: process.env.GITHUB_CLIENT_SECRET,
+            clientId: process.env.GITHUB_CLIENT_ID!,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET!,
             allowDangerousEmailAccountLinking: true,
           }),
         ]

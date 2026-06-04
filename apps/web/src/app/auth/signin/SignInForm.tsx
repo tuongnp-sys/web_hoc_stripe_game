@@ -4,7 +4,12 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export function SignInForm() {
+type SignInFormProps = {
+  showGoogle?: boolean;
+  showGithub?: boolean;
+};
+
+export function SignInForm({ showGoogle = false, showGithub = false }: SignInFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/play";
@@ -14,6 +19,8 @@ export function SignInForm() {
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const showOAuth = showGoogle || showGithub;
 
   async function mergeGuest() {
     await fetch("/api/guest/merge", { method: "POST" });
@@ -46,7 +53,13 @@ export function SignInForm() {
 
     setLoading(false);
     if (result?.error) {
-      setError("Email hoặc mật khẩu không đúng");
+      if (result.error === "Configuration") {
+        setError(
+          "Lỗi cấu hình server (Configuration). Trên Vercel kiểm tra AUTH_SECRET, NEXTAUTH_SECRET (cùng giá trị) và NEXTAUTH_URL / AUTH_URL = https://domain-của-bạn (có https://)."
+        );
+      } else {
+        setError("Email hoặc mật khẩu không đúng");
+      }
       return;
     }
 
@@ -115,31 +128,40 @@ export function SignInForm() {
         </button>
       </form>
 
-      <div className="relative py-2">
-        <span className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </span>
-        <span className="relative flex justify-center text-xs text-slate-400 bg-white px-2">
-          hoặc
-        </span>
-      </div>
+      {showOAuth && (
+        <>
+          <div className="relative py-2">
+            <span className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </span>
+            <span className="relative flex justify-center text-xs text-slate-400 bg-white px-2">
+              hoặc
+            </span>
+          </div>
 
-      <div className="flex flex-col gap-2">
-        <button
-          type="button"
-          onClick={() => signIn("google", { callbackUrl })}
-          className="rounded-xl border py-2 text-sm hover:bg-slate-50"
-        >
-          Google
-        </button>
-        <button
-          type="button"
-          onClick={() => signIn("github", { callbackUrl })}
-          className="rounded-xl border py-2 text-sm hover:bg-slate-50"
-        >
-          GitHub
-        </button>
-      </div>
+          <div className="flex flex-col gap-2">
+            {showGoogle && (
+              <button
+                type="button"
+                onClick={() => signIn("google", { callbackUrl })}
+                className="rounded-xl border py-2 text-sm hover:bg-slate-50"
+              >
+                Google
+              </button>
+            )}
+            {showGithub && (
+              <button
+                type="button"
+                onClick={() => signIn("github", { callbackUrl })}
+                className="rounded-xl border py-2 text-sm hover:bg-slate-50"
+              >
+                GitHub
+              </button>
+            )}
+          </div>
+        </>
+      )}
+
       <p className="text-xs text-slate-500 text-center">
         Sau đăng nhập, lượt chơi guest sẽ được gộp vào tài khoản.
       </p>

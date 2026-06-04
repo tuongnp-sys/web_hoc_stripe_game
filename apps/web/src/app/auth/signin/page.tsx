@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { hasGitHubOAuth, hasGoogleOAuth } from "@/lib/auth-url";
 import { SignInForm } from "./SignInForm";
 
 export default function SignInPage() {
@@ -6,7 +7,7 @@ export default function SignInPage() {
     <div className="max-w-md mx-auto">
       <h1 className="text-2xl font-bold text-center mb-6">Đăng nhập / Đăng ký</h1>
       <Suspense fallback={<p className="text-center text-slate-500">Đang tải...</p>}>
-        <SignInForm />
+        <SignInForm showGoogle={hasGoogleOAuth()} showGithub={hasGitHubOAuth()} />
       </Suspense>
     </div>
   );

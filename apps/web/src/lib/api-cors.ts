@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { getAppBaseUrl } from "./env";
+import { resolveAuthBaseUrl } from "./auth-url";
 
 /** Origins được phép gọi API (VIP Lab :5173 → Next :3000) */
 export function getAllowedOrigins(): string[] {
@@ -25,7 +25,7 @@ export function getAllowedOrigins(): string[] {
   add(process.env.VIP_LAB_ORIGIN);
   add(process.env.NEXT_PUBLIC_APP_URL);
   add(process.env.NEXTAUTH_URL);
-  add(getAppBaseUrl());
+  add(resolveAuthBaseUrl());
 
   return [...set];
 }

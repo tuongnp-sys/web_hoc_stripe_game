@@ -1,13 +1,10 @@
 import type { Tier } from "@prisma/client";
+import { resolveAuthBaseUrl } from "./auth-url";
 
 const PLACEHOLDER_PATTERN = /placeholder|changeme|xxx$/i;
 
 export function getAppBaseUrl(): string {
-  const url =
-    process.env.NEXT_PUBLIC_APP_URL ??
-    process.env.NEXTAUTH_URL ??
-    "http://localhost:3000";
-  return url.replace(/\/$/, "");
+  return resolveAuthBaseUrl();
 }
 
 /** VIP Lab SPA: same-origin `/vip-lab/index.html` (tránh trùng route Next `/vip-lab`). HMR: :5173 */

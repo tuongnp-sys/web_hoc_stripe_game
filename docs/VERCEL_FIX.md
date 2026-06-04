@@ -1,30 +1,36 @@
-# Sửa lỗi deploy Vercel (monorepo)
+# Sửa lỗi deploy & đăng nhập Vercel
 
-## Nguyên nhân thường gặp
+## Cấu hình monorepo
 
-1. **`prisma db push` lúc build** — Neon chưa kết nối được hoặc thiếu `DATABASE_URL` → build đỏ.
-2. **`framework: null`** — Vercel không nhận app Next.js trong `apps/web`.
-3. **Root Directory sai** — để `.` thay vì `apps/web`.
+1. **Settings → General → Root Directory** = `apps/web`
+2. Build dùng [`apps/web/vercel.json`](../apps/web/vercel.json) — không `prisma db push` lúc build
+3. `db:push` + `db:seed` chạy **một lần** từ máy (DATABASE_URL = Neon)
 
-## Việc bạn cần làm trên Vercel (1 lần)
+## Biến môi trường bắt buộc (Production + Preview, áp dụng khi Build)
 
-1. **Settings** → **General** → **Root Directory** → gõ: `apps/web` → Save.
-2. **Settings** → **Environment Variables** — đảm bảo có `DATABASE_URL`, Stripe, `NEXTAUTH_URL`, …
-3. **Deployments** → **Redeploy** (hoặc push commit mới lên GitHub).
+| Biến | Ví dụ |
+|------|--------|
+| `AUTH_SECRET` | Chuỗi ngẫu nhiên ≥ 32 ký tự |
+| `NEXTAUTH_SECRET` | **Cùng giá trị** `AUTH_SECRET` |
+| `AUTH_URL` | `https://your-app.vercel.app` |
+| `NEXTAUTH_URL` | Cùng URL (có `https://`) |
+| `NEXT_PUBLIC_APP_URL` | Cùng URL |
+| `DATABASE_URL` | Neon — nên dùng **pooled** connection string (`-pooler` host) nếu Neon gợi ý |
 
-## Sau khi deploy xong (1 lần trên máy)
+**Không** set `ENABLE_DEV_TOOLS` trên production.
 
-```bash
-cd d:\web_hoc_stripe_game
-# .env trỏ DATABASE_URL Neon
-npm run db:push
-npm run db:seed
-```
+## Lỗi đăng nhập "Server configuration"
 
-## Push code đã sửa
+- Thiếu `AUTH_SECRET` hoặc URL không có `https://` → sửa env → Redeploy
+- Đã seed: `npm run db:seed` với `DATABASE_URL` trỏ Neon
+- Chỉ đăng nhập email/mật khẩu; OAuth chỉ hiện khi có `GOOGLE_*` / `GITHUB_*`
+
+## Sau khi sửa code auth
 
 ```bash
 git add .
-git commit -m "fix: Vercel monorepo build (apps/web root, no db push on build)"
+git commit -m "fix: NextAuth secret, AUTH_URL, Header client"
 git push
 ```
+
+Redeploy trên Vercel.
