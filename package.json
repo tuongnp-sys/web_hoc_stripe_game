@@ -6,6 +6,7 @@
     "packages/*"
   ],
   "scripts": {
+    "postinstall": "prisma generate",
     "predev": "npm run build:lab",
     "dev": "npm run dev --workspace=@web-hoc-stripe/web",
     "dev:lab": "npm run dev --workspace=@web-hoc-stripe/vip-lab",

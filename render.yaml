@@ -2,7 +2,7 @@ services:
   - type: web
     name: web-hoc-stripe-game
     runtime: node
-    buildCommand: npm install && npx prisma generate && npx prisma db push && npm run build:lab && npm run build --workspace=@web-hoc-stripe/web
+    buildCommand: npm install && npx prisma generate && npm run build:lab && npm run build --workspace=@web-hoc-stripe/web
     startCommand: npm run start --workspace=@web-hoc-stripe/web
     healthCheckPath: /api/health
     envVars:

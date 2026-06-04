@@ -21,19 +21,20 @@
 ```bash
 npm install
 npx prisma generate
-npx prisma db push
 npm run build:lab
 npm run build --workspace=@web-hoc-stripe/web
 ```
 
-`vercel.json` và `render.yaml` đã gọi lệnh tương đương.
+`db push` / seed chạy **một lần** từ máy local trỏ Neon, không trong Vercel build.
 
 ## Vercel
 
-1. Import GitHub repo, root = monorepo.
-2. Env như bảng trên.
-3. Stripe Webhook: `https://<domain>/api/stripe/webhook` → event `checkout.session.completed`.
-4. Health: `GET /api/health`
+1. Import GitHub repo.
+2. **Settings → General → Root Directory** = `apps/web` (bắt buộc cho monorepo Next.js).
+3. Build dùng [`apps/web/vercel.json`](../apps/web/vercel.json) — **không** chạy `prisma db push` lúc build; tạo bảng một lần: `npm run db:push` từ máy (DATABASE_URL = Neon).
+4. Env như bảng trên (gồm `DATABASE_URL` cho **Runtime**; có thể bật cho **Build** nếu cần).
+5. Stripe Webhook: `https://<domain>/api/stripe/webhook` → event `checkout.session.completed`.
+6. Health: `GET /api/health`
 
 ## Render
 
