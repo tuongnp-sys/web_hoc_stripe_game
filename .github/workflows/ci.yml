@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci?schema=public
+      AUTH_SECRET: ci-auth-secret-min-32-characters-long
+      NEXTAUTH_SECRET: ci-auth-secret-min-32-characters-long
+      NEXTAUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      STRIPE_SECRET_KEY: sk_test_ci_placeholder_not_used_in_build
+      STRIPE_PRICE_PRO: price_ci_pro_placeholder
+      STRIPE_PRICE_VIP: price_ci_vip_placeholder
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install
+        run: npm install
+
+      - name: Prisma generate
+        run: npx prisma generate
+
+      - name: Build VIP Lab
+        run: npm run build:lab
+
+      - name: Build Next.js
+        run: npm run build --workspace=@web-hoc-stripe/web

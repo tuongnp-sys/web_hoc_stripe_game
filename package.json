@@ -1,0 +1,35 @@
+{
+  "name": "web_hoc_stripe_game",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "predev": "npm run build:lab",
+    "dev": "npm run dev --workspace=@web-hoc-stripe/web",
+    "dev:lab": "npm run dev --workspace=@web-hoc-stripe/vip-lab",
+    "dev:all": "concurrently -n web,lab -c blue,magenta \"npm run dev\" \"npm run dev:lab\"",
+    "build:lab": "npm run build --workspace=@web-hoc-stripe/vip-lab",
+    "build": "npm run build:lab && npm run build --workspace=@web-hoc-stripe/web",
+    "stripe:check": "node scripts/check-stripe.mjs",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "npx tsx prisma/seed.ts",
+    "db:studio": "prisma studio"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "prisma": "^6.8.2",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.8.2",
+    "bcryptjs": "^3.0.2",
+    "stripe": "^18.2.1"
+  }
+}

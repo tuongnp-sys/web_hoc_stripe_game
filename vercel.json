@@ -1,0 +1,5 @@
+{
+  "installCommand": "npm install",
+  "buildCommand": "npx prisma generate && npx prisma db push && npm run build:lab && npm run build --workspace=@web-hoc-stripe/web",
+  "framework": null
+}
