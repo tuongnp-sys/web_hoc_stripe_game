@@ -19,11 +19,14 @@
 
 **Không** set `ENABLE_DEV_TOOLS` trên production.
 
-## Lỗi đăng nhập "Server configuration"
+## Lỗi đăng nhập "Server configuration" / vòng lặp form
 
 - Thiếu `AUTH_SECRET` hoặc URL không có `https://` → sửa env → Redeploy
+- **Không** để `NEXTAUTH_URL=http://localhost:3000` trên Vercel — code tự ưu tiên `VERCEL_URL`, nhưng nên set đúng URL production cho đồng bộ
+- Kiểm tra: `GET https://<domain>/api/health` → `authBaseUrl` phải là domain Vercel, `authUrlMisconfigured: false`, `hasAuthSecret: true`
 - Đã seed: `npm run db:seed` với `DATABASE_URL` trỏ Neon
 - Chỉ đăng nhập email/mật khẩu; OAuth chỉ hiện khi có `GOOGLE_*` / `GITHUB_*`
+- Sau đăng nhập redirect dùng full page load (tránh middleware chặn trước khi cookie gắn)
 
 ## Sau khi sửa code auth
 

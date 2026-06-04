@@ -1,18 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 
 type SignInFormProps = {
   showGoogle?: boolean;
   showGithub?: boolean;
 };
 
+function safeCallbackPath(raw: string | null): string {
+  if (!raw) return "/play";
+  if (raw.startsWith("/") && !raw.startsWith("//")) return raw;
+  try {
+    const path = new URL(raw).pathname;
+    return path.startsWith("/") ? path : "/play";
+  } catch {
+    return "/play";
+  }
+}
+
 export function SignInForm({ showGoogle = false, showGithub = false }: SignInFormProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/play";
+  const { update } = useSession();
+  const callbackUrl = safeCallbackPath(searchParams.get("callbackUrl"));
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,7 +34,7 @@ export function SignInForm({ showGoogle = false, showGithub = false }: SignInFor
   const showOAuth = showGoogle || showGithub;
 
   async function mergeGuest() {
-    await fetch("/api/guest/merge", { method: "POST" });
+    await fetch("/api/guest/merge", { method: "POST", credentials: "include" });
   }
 
   async function handleCredentials(e: React.FormEvent) {
@@ -51,8 +62,8 @@ export function SignInForm({ showGoogle = false, showGithub = false }: SignInFor
       redirect: false,
     });
 
-    setLoading(false);
     if (result?.error) {
+      setLoading(false);
       if (result.error === "Configuration") {
         setError(
           "Lỗi cấu hình server (Configuration). Trên Vercel kiểm tra AUTH_SECRET, NEXTAUTH_SECRET (cùng giá trị) và NEXTAUTH_URL / AUTH_URL = https://domain-của-bạn (có https://)."
@@ -63,9 +74,15 @@ export function SignInForm({ showGoogle = false, showGithub = false }: SignInFor
       return;
     }
 
+    if (result?.ok === false) {
+      setLoading(false);
+      setError("Đăng nhập thất bại — thử lại hoặc kiểm tra kết nối database.");
+      return;
+    }
+
     await mergeGuest();
-    router.push(callbackUrl);
-    router.refresh();
+    await update();
+    window.location.assign(callbackUrl);
   }
 
   return (

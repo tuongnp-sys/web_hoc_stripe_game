@@ -15,14 +15,50 @@ function normalizeToOrigin(raw: string): string | null {
   }
 }
 
+export function isLocalhostOrigin(origin: string): boolean {
+  try {
+    const host = new URL(origin).hostname;
+    return host === "localhost" || host === "127.0.0.1";
+  } catch {
+    return false;
+  }
+}
+
+function isOnVercel(): boolean {
+  return process.env.VERCEL === "1" || !!process.env.VERCEL_URL?.trim();
+}
+
 /** URL gốc app — luôn hợp lệ cho `new URL()` */
 export function resolveAuthBaseUrl(): string {
   const vercelHost = process.env.VERCEL_URL?.trim();
+  const vercelOrigin = vercelHost
+    ? normalizeToOrigin(
+        vercelHost.startsWith("http") ? vercelHost : `https://${vercelHost}`
+      )
+    : null;
+
+  if (isOnVercel()) {
+    const productionCandidates = [
+      process.env.NEXT_PUBLIC_APP_URL,
+      process.env.AUTH_URL,
+      process.env.NEXTAUTH_URL,
+      vercelOrigin ?? undefined,
+    ];
+
+    for (const raw of productionCandidates) {
+      if (!raw) continue;
+      const origin = normalizeToOrigin(raw);
+      if (origin && !isLocalhostOrigin(origin)) return origin;
+    }
+
+    if (vercelOrigin) return vercelOrigin;
+  }
+
   const candidates = [
     process.env.NEXTAUTH_URL,
     process.env.AUTH_URL,
     process.env.NEXT_PUBLIC_APP_URL,
-    vercelHost ? (vercelHost.startsWith("http") ? vercelHost : `https://${vercelHost}`) : undefined,
+    vercelOrigin ?? undefined,
     "http://localhost:3000",
   ];
 
@@ -51,9 +87,26 @@ export function getAuthSecret(): string {
   throw new Error(msg);
 }
 
+export function hasAuthSecret(): boolean {
+  try {
+    getAuthSecret();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Gắn AUTH_URL trước khi khởi tạo NextAuth (tránh Invalid URL trên Vercel) */
 export function ensureAuthEnv(): void {
   const base = resolveAuthBaseUrl();
+  const onVercel = isOnVercel();
+
+  if (onVercel) {
+    process.env.AUTH_URL = base;
+    process.env.NEXTAUTH_URL = base;
+    return;
+  }
+
   if (!process.env.AUTH_URL) process.env.AUTH_URL = base;
   if (!process.env.NEXTAUTH_URL) process.env.NEXTAUTH_URL = base;
 }
