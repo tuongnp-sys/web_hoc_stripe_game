@@ -16,12 +16,16 @@ function isAdmin(tier: string | undefined, email: string | undefined) {
   return email ? admins.includes(email.toLowerCase()) : false;
 }
 
-function useSecureSessionCookie(req: NextRequest): boolean {
-  return (
-    req.nextUrl.protocol === "https:" ||
-    process.env.VERCEL === "1" ||
-    process.env.NODE_ENV === "production"
-  );
+/** Auth.js: HTTP → authjs.session-token, HTTPS/Vercel → __Secure-authjs.session-token */
+function getSessionTokenCookieOptions(req: NextRequest) {
+  const secure =
+    process.env.VERCEL === "1" || req.nextUrl.protocol === "https:";
+  return {
+    secureCookie: secure,
+    cookieName: secure
+      ? "__Secure-authjs.session-token"
+      : "authjs.session-token",
+  };
 }
 
 export async function middleware(req: NextRequest) {
@@ -31,18 +35,21 @@ export async function middleware(req: NextRequest) {
   const token = await getToken({
     req,
     secret: getAuthSecret(),
-    secureCookie: useSecureSessionCookie(req),
+    ...getSessionTokenCookieOptions(req),
   });
 
   const pathname = req.nextUrl.pathname;
+  const userId = token?.sub;
+  const tier = token?.tier as string | undefined;
+  const email = (token?.email as string | undefined) ?? undefined;
 
   if (pathname.startsWith("/admin")) {
-    if (!token?.sub) {
+    if (!userId) {
       return NextResponse.redirect(
         new URL("/auth/signin?callbackUrl=/admin", req.url)
       );
     }
-    if (!isAdmin(token.tier as string | undefined, token.email as string | undefined)) {
+    if (!isAdmin(tier, email)) {
       return NextResponse.redirect(new URL("/pricing", req.url));
     }
     return NextResponse.next();
@@ -62,12 +69,12 @@ export async function middleware(req: NextRequest) {
   const isVipLabEmbed = pathname === "/vip-lab/index.html";
 
   if (isVipLabShell || isVipLabEmbed) {
-    if (!token?.sub) {
+    if (!userId) {
       return NextResponse.redirect(
         new URL("/auth/signin?callbackUrl=/vip-lab", req.url)
       );
     }
-    if (!canAccessVipLab(token.tier as string | undefined)) {
+    if (!canAccessVipLab(tier)) {
       return NextResponse.redirect(new URL("/pricing?need=vip", req.url));
     }
   }

@@ -27,7 +27,7 @@
 - Đã seed: `npm run db:seed` với `DATABASE_URL` trỏ Neon
 - Chỉ đăng nhập email/mật khẩu; OAuth chỉ hiện khi có `GOOGLE_*` / `GITHUB_*`
 - Sau đăng nhập redirect dùng full page load (tránh middleware chặn trước khi cookie gắn)
-- Middleware phải `getToken({ secureCookie: true })` trên HTTPS để đọc `__Secure-authjs.session-token`
+- Middleware phải `getToken` với `secureCookie: true` và `cookieName: __Secure-authjs.session-token` trên HTTPS/Vercel
 
 ## Sau khi sửa code auth
 
